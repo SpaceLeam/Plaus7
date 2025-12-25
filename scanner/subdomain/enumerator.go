@@ -256,7 +256,7 @@ func (s *Scanner) bruteforceEnumerate(ctx context.Context) {
 	for scanner.Scan() {
 		select {
 		case <-ctx.Done():
-			break
+			return
 		default:
 			word := strings.TrimSpace(scanner.Text())
 			if word != "" && !strings.HasPrefix(word, "#") {

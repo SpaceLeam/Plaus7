@@ -158,7 +158,7 @@ func (c *Crawler) Crawl() ([]CrawlResult, error) {
 }
 
 // worker processes crawl jobs
-func (c *Crawler) worker(ctx context.Context, jobs <-chan CrawlJob) {
+func (c *Crawler) worker(ctx context.Context, jobs chan CrawlJob) {
 	for job := range jobs {
 		select {
 		case <-ctx.Done():
@@ -175,7 +175,7 @@ func (c *Crawler) worker(ctx context.Context, jobs <-chan CrawlJob) {
 }
 
 // crawlURL fetches and parses a URL
-func (c *Crawler) crawlURL(ctx context.Context, job CrawlJob, jobs chan<- CrawlJob) {
+func (c *Crawler) crawlURL(ctx context.Context, job CrawlJob, jobs chan CrawlJob) {
 	result := c.prober.probe(ctx, job.URL)
 	if result.StatusCode == 0 {
 		return

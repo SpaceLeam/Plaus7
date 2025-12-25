@@ -83,7 +83,7 @@ func (r *Resolver) Resolve(ctx context.Context, subdomains []string) []Resolutio
 		for _, sub := range subdomains {
 			select {
 			case <-ctx.Done():
-				break
+				return
 			default:
 				jobs <- sub
 			}
