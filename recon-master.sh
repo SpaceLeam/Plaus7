@@ -18,6 +18,10 @@ STATE_FILE="${SCRIPT_DIR}/.recon_state"
 LOG_DIR="${SCRIPT_DIR}/output/logs"
 LOG_FILE="${LOG_DIR}/recon_$(date +%Y%m%d_%H%M%S).log"
 
+# Load production utilities
+source "${SCRIPT_DIR}/utils/exit-codes.sh" 2>/dev/null || true
+source "${SCRIPT_DIR}/utils/secrets-loader.sh" 2>/dev/null || true
+
 # Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -26,9 +30,9 @@ BLUE='\033[0;34m'
 CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
-# Default settings
-THREADS=100
-TIMEOUT=30
+# Default settings (can be overridden via .env)
+THREADS="${THREADS:-100}"
+TIMEOUT="${TIMEOUT:-30}"
 VERBOSE=false
 RESUME=false
 
@@ -409,6 +413,14 @@ run_report_generation() {
 # =============================================================================
 
 run_pipeline() {
+    # Run resource checks first
+    if [[ -x "${SCRIPT_DIR}/utils/resource-guard.sh" ]]; then
+        "${SCRIPT_DIR}/utils/resource-guard.sh" "$OUTPUT_DIR" "true" || {
+            log_error "Resource checks failed"
+            exit ${EXIT_RESOURCE_ERROR:-3}
+        }
+    fi
+    
     local start_idx=0
     local total_stages=${#STAGES[@]}
     

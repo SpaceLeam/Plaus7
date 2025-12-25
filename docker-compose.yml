@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  recon-suite:
+    build: .
+    volumes:
+      - ./output:/recon-suite/output
+      - ./config:/recon-suite/config:ro
+    environment:
+      - THREADS=${THREADS:-200}
+      - SLACK_WEBHOOK=${SLACK_WEBHOOK:-}
+      - DISCORD_WEBHOOK=${DISCORD_WEBHOOK:-}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID:-}
+    networks:
+      - recon-net
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+          cpus: '2'
+
+networks:
+  recon-net:
