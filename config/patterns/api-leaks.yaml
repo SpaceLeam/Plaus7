@@ -1,0 +1,209 @@
+# API Leaks Detection Patterns
+# ============================
+
+name: api-leaks
+description: Detect exposed API keys, tokens, and secrets
+version: "1.0"
+
+patterns:
+  # AWS Credentials
+  - id: aws-access-key
+    name: "AWS Access Key Exposed"
+    regex: "AKIA[0-9A-Z]{16}"
+    severity: critical
+    confidence: high
+    description: "AWS Access Key ID found in source"
+    false_positive:
+      - "example"
+      - "test"
+      - "sample"
+      - "AKIAIOSFODNN7EXAMPLE"
+    remediation: "Rotate the AWS access key immediately and revoke the exposed key"
+
+  - id: aws-secret-key
+    name: "AWS Secret Access Key"
+    regex: "(?i)aws(.{0,20})?(?-i)['\"][0-9a-zA-Z/+]{40}['\"]"
+    severity: critical
+    confidence: medium
+    description: "Potential AWS Secret Access Key found"
+    false_positive:
+      - "example"
+      - "test"
+
+  # GitHub Tokens
+  - id: github-token
+    name: "GitHub Personal Access Token"
+    regex: "ghp_[0-9a-zA-Z]{36}"
+    severity: high
+    confidence: high
+    description: "GitHub personal access token exposed"
+    remediation: "Revoke token at https://github.com/settings/tokens"
+
+  - id: github-oauth
+    name: "GitHub OAuth Access Token"
+    regex: "gho_[0-9a-zA-Z]{36}"
+    severity: high
+    confidence: high
+    description: "GitHub OAuth access token exposed"
+
+  - id: github-app-token
+    name: "GitHub App Token"
+    regex: "(ghu|ghs)_[0-9a-zA-Z]{36}"
+    severity: high
+    confidence: high
+    description: "GitHub App token exposed"
+
+  # Slack
+  - id: slack-token
+    name: "Slack Bot Token"
+    regex: "xoxb-[0-9]{11}-[0-9]{11}-[0-9a-zA-Z]{24}"
+    severity: high
+    confidence: high
+    description: "Slack bot token exposed"
+
+  - id: slack-webhook
+    name: "Slack Webhook URL"
+    regex: "https://hooks\\.slack\\.com/services/T[a-zA-Z0-9_]{8}/B[a-zA-Z0-9_]{8,12}/[a-zA-Z0-9_]{24}"
+    severity: medium
+    confidence: high
+    description: "Slack webhook URL exposed"
+
+  # Google
+  - id: google-api-key
+    name: "Google API Key"
+    regex: "AIza[0-9A-Za-z\\-_]{35}"
+    severity: high
+    confidence: high
+    description: "Google API key exposed"
+
+  - id: google-oauth
+    name: "Google OAuth Client Secret"
+    regex: "(?i)client_secret[\"']?\\s*[:=]\\s*[\"'][0-9a-zA-Z_-]{24}[\"']"
+    severity: high
+    confidence: medium
+    description: "Google OAuth client secret exposed"
+
+  # Firebase
+  - id: firebase-key
+    name: "Firebase API Key"
+    regex: "(?i)firebase.*['\"][A-Za-z0-9_-]{39}['\"]"
+    severity: medium
+    confidence: medium
+    description: "Firebase configuration exposed"
+
+  # Stripe
+  - id: stripe-secret
+    name: "Stripe Secret Key"
+    regex: "sk_live_[0-9a-zA-Z]{24}"
+    severity: critical
+    confidence: high
+    description: "Stripe production secret key exposed"
+    remediation: "Rotate the Stripe key immediately from dashboard"
+
+  - id: stripe-publishable
+    name: "Stripe Publishable Key"
+    regex: "pk_live_[0-9a-zA-Z]{24}"
+    severity: low
+    confidence: high
+    description: "Stripe publishable key (lower risk but track)"
+
+  # Twilio
+  - id: twilio-api
+    name: "Twilio API Key"
+    regex: "SK[0-9a-fA-F]{32}"
+    severity: high
+    confidence: medium
+    description: "Twilio API key exposed"
+
+  # SendGrid
+  - id: sendgrid-api
+    name: "SendGrid API Key"
+    regex: "SG\\.[0-9A-Za-z\\-_]{22}\\.[0-9A-Za-z\\-_]{43}"
+    severity: high
+    confidence: high
+    description: "SendGrid API key exposed"
+
+  # JWT
+  - id: jwt-token
+    name: "JWT Token"
+    regex: "eyJ[A-Za-z0-9-_=]+\\.eyJ[A-Za-z0-9-_=]+\\.[A-Za-z0-9-_.+/=]*"
+    severity: medium
+    confidence: high
+    description: "JWT token found - verify if sensitive"
+
+  # Private Keys
+  - id: private-key-rsa
+    name: "RSA Private Key"
+    regex: "-----BEGIN RSA PRIVATE KEY-----"
+    severity: critical
+    confidence: high
+    description: "RSA private key exposed"
+
+  - id: private-key-openssh
+    name: "OpenSSH Private Key"
+    regex: "-----BEGIN OPENSSH PRIVATE KEY-----"
+    severity: critical
+    confidence: high
+    description: "OpenSSH private key exposed"
+
+  # Generic Secrets
+  - id: generic-api-key
+    name: "Generic API Key Pattern"
+    regex: "(?i)(api[_-]?key|apikey|api_secret)[\"']?\\s*[:=]\\s*[\"'][0-9a-zA-Z_-]{16,}[\"']"
+    severity: medium
+    confidence: medium
+    description: "Potential API key in configuration"
+
+  - id: generic-password
+    name: "Hardcoded Password"
+    regex: "(?i)(password|passwd|pwd)[\"']?\\s*[:=]\\s*[\"'][^\"']{8,}[\"']"
+    severity: high
+    confidence: low
+    description: "Potential hardcoded password"
+    false_positive:
+      - "password123"
+      - "changeme"
+      - "example"
+
+  # Database Connection Strings
+  - id: mongodb-uri
+    name: "MongoDB Connection String"
+    regex: "mongodb(\\+srv)?://[^\\s\"'<>]+"
+    severity: high
+    confidence: high
+    description: "MongoDB connection string with potential credentials"
+
+  - id: postgres-uri
+    name: "PostgreSQL Connection String"
+    regex: "postgres(ql)?://[^\\s\"'<>]+"
+    severity: high
+    confidence: high
+    description: "PostgreSQL connection string"
+
+  - id: mysql-uri
+    name: "MySQL Connection String"
+    regex: "mysql://[^\\s\"'<>]+"
+    severity: high
+    confidence: high
+    description: "MySQL connection string"
+
+# GraphQL Specific
+endpoints:
+  - id: graphql-introspection
+    name: "GraphQL Introspection Enabled"
+    path: "/graphql"
+    method: POST
+    body: '{"query": "{__schema{types{name}}}"}'
+    success_indicator: "__schema"
+    severity: medium
+    confidence: high
+    description: "GraphQL introspection enabled - schema exposed"
+
+  - id: graphiql-exposed
+    name: "GraphiQL Interface Exposed"
+    path: "/graphiql"
+    method: GET
+    success_indicator: "GraphiQL"
+    severity: medium
+    confidence: high
+    description: "GraphiQL development interface accessible"

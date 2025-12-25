@@ -1,0 +1,286 @@
+# Framework Vulnerability Detection Patterns
+# ==========================================
+
+name: framework-vuln
+description: Detect framework-specific vulnerabilities and misconfigurations
+version: "1.0"
+
+patterns:
+  # Laravel
+  - id: laravel-debug
+    name: "Laravel Debug Mode Enabled"
+    paths:
+      - "/api"
+      - "/test"
+    method: GET
+    content_contains:
+      - "Whoops!"
+      - "DebugBar"
+      - "Laravel"
+      - "Illuminate\\\\Exception"
+    severity: high
+    confidence: high
+    description: "Laravel debug mode enabled in production"
+
+  - id: laravel-telescope
+    name: "Laravel Telescope Exposed"
+    path: "/telescope"
+    method: GET
+    status_codes: [200]
+    content_contains:
+      - "Telescope"
+    severity: high
+    confidence: high
+    description: "Laravel Telescope debugging tool exposed"
+
+  - id: laravel-horizon
+    name: "Laravel Horizon Exposed"
+    path: "/horizon"
+    method: GET
+    status_codes: [200]
+    content_contains:
+      - "Horizon"
+    severity: medium
+    confidence: high
+    description: "Laravel Horizon queue manager exposed"
+
+  # Django
+  - id: django-debug
+    name: "Django Debug Mode Enabled"
+    content_contains:
+      - "Django Debug Toolbar"
+      - "You're seeing this error because you have"
+      - "DEBUG = True"
+    severity: high
+    confidence: high
+    description: "Django debug mode enabled"
+
+  - id: django-admin-exposed
+    name: "Django Admin Login Exposed"
+    paths:
+      - "/admin/"
+      - "/django-admin/"
+    method: GET
+    status_codes: [200]
+    content_contains:
+      - "Django administration"
+      - "Log in | Django"
+    severity: low
+    confidence: high
+    description: "Django admin interface accessible"
+
+  # Spring Boot
+  - id: spring-error-page
+    name: "Spring Whitelabel Error Page"
+    content_contains:
+      - "Whitelabel Error Page"
+      - "There was an unexpected error"
+    severity: low
+    confidence: high
+    description: "Spring Boot default error page visible"
+
+  - id: spring-h2-console
+    name: "Spring H2 Console Exposed"
+    paths:
+      - "/h2-console"
+      - "/h2"
+    method: GET
+    status_codes: [200]
+    content_contains:
+      - "H2 Console"
+    severity: critical
+    confidence: high
+    description: "H2 database console exposed - RCE possible"
+
+  # Ruby on Rails
+  - id: rails-debug
+    name: "Rails Development Mode"
+    content_contains:
+      - "Action Controller: Exception caught"
+      - "Rails.root:"
+      - "ActiveRecord::RecordNotFound"
+    severity: high
+    confidence: high
+    description: "Rails development error pages visible"
+
+  - id: rails-credentials
+    name: "Rails Credentials File"
+    paths:
+      - "/config/credentials.yml.enc"
+      - "/config/secrets.yml"
+    method: GET
+    status_codes: [200]
+    severity: high
+    confidence: medium
+    description: "Rails credentials file accessible"
+
+  # Node.js / Express
+  - id: express-error
+    name: "Express Stack Trace"
+    content_contains:
+      - "at Object.<anonymous>"
+      - "at Module._compile"
+      - "node_modules"
+    severity: medium
+    confidence: high
+    description: "Express.js stack trace exposed"
+
+  - id: nodejs-npm-debug
+    name: "NPM Debug Log"
+    path: "/npm-debug.log"
+    method: GET
+    status_codes: [200]
+    severity: medium
+    confidence: high
+    description: "NPM debug log exposed"
+
+  # ASP.NET
+  - id: aspnet-error
+    name: "ASP.NET Error Page"
+    content_contains:
+      - "Server Error in '/' Application"
+      - "Runtime Error"
+      - "System.Web."
+    severity: medium
+    confidence: high
+    description: "ASP.NET detailed error page exposed"
+
+  - id: aspnet-trace
+    name: "ASP.NET Trace Enabled"
+    path: "/trace.axd"
+    method: GET
+    status_codes: [200]
+    severity: high
+    confidence: high
+    description: "ASP.NET trace handler accessible"
+
+  - id: aspnet-elmah
+    name: "ELMAH Error Log"
+    path: "/elmah.axd"
+    method: GET
+    status_codes: [200]
+    severity: high
+    confidence: high
+    description: "ELMAH error logging accessible"
+
+  # PHP
+  - id: php-error
+    name: "PHP Error Display"
+    content_contains:
+      - "Fatal error:"
+      - "Warning:"
+      - "Parse error:"
+      - "on line"
+    severity: medium
+    confidence: high
+    description: "PHP errors displayed publicly"
+
+  - id: php-xdebug
+    name: "Xdebug Enabled"
+    content_contains:
+      - "Xdebug"
+      - "xdebug.remote_enable"
+    severity: high
+    confidence: high
+    description: "PHP Xdebug enabled in production"
+
+  # CMS Specific
+  - id: wordpress-debug
+    name: "WordPress Debug Log"
+    path: "/wp-content/debug.log"
+    method: GET
+    status_codes: [200]
+    severity: medium
+    confidence: high
+    description: "WordPress debug log accessible"
+
+  - id: wordpress-xmlrpc
+    name: "WordPress XML-RPC Enabled"
+    path: "/xmlrpc.php"
+    method: POST
+    body: "<?xml version=\"1.0\"?><methodCall><methodName>system.listMethods</methodName></methodCall>"
+    content_contains:
+      - "methodResponse"
+    severity: medium
+    confidence: high
+    description: "WordPress XML-RPC enabled - brute force possible"
+
+  - id: drupal-changelog
+    name: "Drupal Changelog"
+    paths:
+      - "/CHANGELOG.txt"
+      - "/core/CHANGELOG.txt"
+    method: GET
+    status_codes: [200]
+    content_contains:
+      - "Drupal"
+    severity: low
+    confidence: high
+    description: "Drupal version disclosure via changelog"
+
+  - id: joomla-config
+    name: "Joomla Configuration Backup"
+    paths:
+      - "/configuration.php.bak"
+      - "/configuration.php~"
+    method: GET
+    status_codes: [200]
+    severity: critical
+    confidence: high
+    description: "Joomla configuration backup accessible"
+
+  # API Frameworks
+  - id: swagger-ui
+    name: "Swagger UI Exposed"
+    paths:
+      - "/swagger-ui.html"
+      - "/swagger-ui/"
+      - "/swagger/"
+      - "/api-docs"
+    method: GET
+    status_codes: [200]
+    content_contains:
+      - "swagger"
+      - "Swagger UI"
+    severity: low
+    confidence: high
+    description: "Swagger API documentation exposed"
+
+  - id: openapi-spec
+    name: "OpenAPI Specification"
+    paths:
+      - "/openapi.json"
+      - "/openapi.yaml"
+      - "/v2/api-docs"
+      - "/v3/api-docs"
+    method: GET
+    status_codes: [200]
+    severity: low
+    confidence: high
+    description: "OpenAPI specification publicly accessible"
+
+  # Version Disclosure
+  - id: server-header-version
+    name: "Server Version in Header"
+    check_type: "header"
+    header: "Server"
+    regex: "(Apache|nginx|IIS|Tomcat)[/\\s][0-9.]+"
+    severity: low
+    confidence: high
+    description: "Server version disclosed in headers"
+
+  - id: x-powered-by
+    name: "X-Powered-By Header"
+    check_type: "header"
+    header: "X-Powered-By"
+    severity: low
+    confidence: high
+    description: "Technology stack disclosed via X-Powered-By"
+
+  - id: x-aspnet-version
+    name: "ASP.NET Version Header"
+    check_type: "header"
+    header: "X-AspNet-Version"
+    severity: low
+    confidence: high
+    description: "ASP.NET version disclosed"

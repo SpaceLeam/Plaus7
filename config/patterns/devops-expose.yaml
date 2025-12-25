@@ -1,0 +1,293 @@
+# DevOps Exposure Detection Patterns
+# ==================================
+
+name: devops-expose
+description: Detect exposed DevOps tools, CI/CD systems, and infrastructure
+version: "1.0"
+
+patterns:
+  # Environment Files
+  - id: env-file
+    name: "Exposed .env File"
+    path: "/.env"
+    method: GET
+    status_codes: [200]
+    content_contains:
+      - "DB_PASSWORD"
+      - "API_KEY"
+      - "SECRET"
+      - "DATABASE_URL"
+    severity: critical
+    confidence: high
+    description: "Environment configuration file publicly accessible"
+
+  # Git Exposure
+  - id: git-config
+    name: "Git Config Exposed"
+    path: "/.git/config"
+    method: GET
+    status_codes: [200]
+    content_contains:
+      - "[core]"
+      - "[remote"
+    severity: high
+    confidence: high
+    description: "Git repository configuration exposed"
+
+  - id: git-head
+    name: "Git HEAD Exposed"
+    path: "/.git/HEAD"
+    method: GET
+    status_codes: [200]
+    content_contains:
+      - "ref:"
+    severity: high
+    confidence: high
+    description: "Git HEAD file exposed - repository downloadable"
+
+  # Docker
+  - id: docker-compose
+    name: "Docker Compose Exposed"
+    path: "/docker-compose.yml"
+    method: GET
+    status_codes: [200]
+    content_contains:
+      - "services:"
+      - "version:"
+    severity: high
+    confidence: high
+    description: "Docker compose configuration exposed"
+
+  - id: dockerfile
+    name: "Dockerfile Exposed"
+    path: "/Dockerfile"
+    method: GET
+    status_codes: [200]
+    content_contains:
+      - "FROM"
+      - "RUN"
+    severity: medium
+    confidence: high
+    description: "Dockerfile exposed - build process visible"
+
+  # Kubernetes
+  - id: k8s-config
+    name: "Kubernetes Config Exposed"
+    paths:
+      - "/kubeconfig"
+      - "/.kube/config"
+      - "/k8s/config"
+    method: GET
+    status_codes: [200]
+    content_contains:
+      - "apiVersion:"
+      - "clusters:"
+      - "users:"
+    severity: critical
+    confidence: high
+    description: "Kubernetes configuration exposed"
+
+  # CI/CD
+  - id: jenkins-exposed
+    name: "Jenkins Console Exposed"
+    paths:
+      - "/jenkins"
+      - "/jenkins/script"
+      - "/jenkins/manage"
+    method: GET
+    content_contains:
+      - "Jenkins"
+      - "Dashboard"
+    severity: high
+    confidence: medium
+    description: "Jenkins CI console accessible"
+
+  - id: gitlab-ci
+    name: "GitLab CI Config Exposed"
+    path: "/.gitlab-ci.yml"
+    method: GET
+    status_codes: [200]
+    content_contains:
+      - "stages:"
+      - "script:"
+    severity: medium
+    confidence: high
+    description: "GitLab CI configuration exposed"
+
+  - id: github-actions
+    name: "GitHub Actions Workflow"
+    path: "/.github/workflows"
+    method: GET
+    status_codes: [200]
+    severity: low
+    confidence: high
+    description: "GitHub Actions workflows visible"
+
+  # Spring Boot Actuator
+  - id: actuator-env
+    name: "Spring Actuator Env Exposed"
+    paths:
+      - "/actuator/env"
+      - "/manage/env"
+      - "/env"
+    method: GET
+    status_codes: [200]
+    content_contains:
+      - "propertySources"
+      - "systemProperties"
+    severity: critical
+    confidence: high
+    description: "Spring actuator environment endpoint exposed"
+
+  - id: actuator-heapdump
+    name: "Spring Actuator Heapdump"
+    paths:
+      - "/actuator/heapdump"
+      - "/heapdump"
+    method: GET
+    status_codes: [200]
+    severity: critical
+    confidence: high
+    description: "Java heapdump accessible - memory exposure"
+
+  - id: actuator-mappings
+    name: "Spring Actuator Mappings"
+    paths:
+      - "/actuator/mappings"
+      - "/mappings"
+    method: GET
+    status_codes: [200]
+    content_contains:
+      - "dispatcherServlets"
+    severity: medium
+    confidence: high
+    description: "Spring endpoint mappings exposed"
+
+  # Server Status
+  - id: apache-status
+    name: "Apache Server Status"
+    path: "/server-status"
+    method: GET
+    status_codes: [200]
+    content_contains:
+      - "Apache Server Status"
+      - "Server Version"
+    severity: medium
+    confidence: high
+    description: "Apache server status page accessible"
+
+  - id: nginx-status
+    name: "Nginx Status"
+    path: "/nginx_status"
+    method: GET
+    status_codes: [200]
+    content_contains:
+      - "Active connections"
+    severity: low
+    confidence: high
+    description: "Nginx status page accessible"
+
+  # Debug Pages
+  - id: phpinfo
+    name: "PHP Info Page"
+    paths:
+      - "/phpinfo.php"
+      - "/info.php"
+      - "/test.php"
+    method: GET
+    status_codes: [200]
+    content_contains:
+      - "PHP Version"
+      - "phpinfo()"
+    severity: medium
+    confidence: high
+    description: "PHP info page exposed"
+
+  - id: debug-toolbar
+    name: "Debug Toolbar Exposed"
+    paths:
+      - "/__debug__"
+      - "/_debugbar"
+      - "/debug"
+    method: GET
+    status_codes: [200]
+    severity: high
+    confidence: medium
+    description: "Debug toolbar accessible in production"
+
+  # Prometheus/Grafana
+  - id: prometheus-metrics
+    name: "Prometheus Metrics Exposed"
+    paths:
+      - "/metrics"
+      - "/prometheus/metrics"
+    method: GET
+    status_codes: [200]
+    content_contains:
+      - "# HELP"
+      - "# TYPE"
+    severity: medium
+    confidence: high
+    description: "Prometheus metrics endpoint accessible"
+
+  - id: grafana-exposed
+    name: "Grafana Dashboard"
+    path: "/grafana"
+    method: GET
+    content_contains:
+      - "Grafana"
+    severity: medium
+    confidence: medium
+    description: "Grafana dashboard accessible"
+
+  # Backup Files
+  - id: backup-sql
+    name: "SQL Backup File"
+    paths:
+      - "/backup.sql"
+      - "/database.sql"
+      - "/dump.sql"
+      - "/db.sql"
+    method: GET
+    status_codes: [200]
+    severity: critical
+    confidence: high
+    description: "Database backup file publicly accessible"
+
+  - id: backup-archive
+    name: "Backup Archive"
+    paths:
+      - "/backup.zip"
+      - "/backup.tar.gz"
+      - "/site.zip"
+      - "/www.zip"
+    method: GET
+    status_codes: [200]
+    severity: critical
+    confidence: high
+    description: "Backup archive publicly accessible"
+
+  # Config Files
+  - id: wp-config
+    name: "WordPress Config"
+    paths:
+      - "/wp-config.php.bak"
+      - "/wp-config.php~"
+      - "/wp-config.php.old"
+    method: GET
+    status_codes: [200]
+    severity: critical
+    confidence: high
+    description: "WordPress config backup with credentials"
+
+  - id: web-config
+    name: "ASP.NET Web.config"
+    path: "/web.config"
+    method: GET
+    status_codes: [200]
+    content_contains:
+      - "connectionStrings"
+      - "appSettings"
+    severity: high
+    confidence: high
+    description: "ASP.NET web.config exposed"

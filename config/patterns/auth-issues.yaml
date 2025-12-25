@@ -1,0 +1,224 @@
+# Authentication Issues Detection Patterns
+# ========================================
+
+name: auth-issues
+description: Detect authentication misconfigurations and bypasses
+version: "1.0"
+
+patterns:
+  # Default Credentials
+  - id: default-admin
+    name: "Default Admin Credentials"
+    paths:
+      - "/admin"
+      - "/administrator"
+      - "/login"
+    method: POST
+    test_credentials:
+      - username: "admin"
+        password: "admin"
+      - username: "admin"
+        password: "password"
+      - username: "admin"
+        password: "123456"
+      - username: "root"
+        password: "root"
+      - username: "administrator"
+        password: "administrator"
+    severity: critical
+    confidence: low
+    description: "Default credentials may be in use"
+
+  # JWT Vulnerabilities
+  - id: jwt-none-alg
+    name: "JWT None Algorithm Accepted"
+    check_type: "jwt_manipulation"
+    test: "change_algorithm_to_none"
+    severity: critical
+    confidence: high
+    description: "JWT accepts 'none' algorithm - auth bypass possible"
+
+  - id: jwt-weak-secret
+    name: "JWT Weak Secret"
+    check_type: "jwt_crack"
+    wordlist: "common-secrets.txt"
+    severity: high
+    confidence: medium
+    description: "JWT uses weak/common secret key"
+
+  # Session Issues
+  - id: session-cookie-httponly
+    name: "Session Cookie Missing HttpOnly"
+    check_type: "cookie_flags"
+    cookie_name: ["session", "PHPSESSID", "JSESSIONID", "ASP.NET_SessionId"]
+    flag_missing: "HttpOnly"
+    severity: medium
+    confidence: high
+    description: "Session cookie missing HttpOnly flag - XSS can steal session"
+
+  - id: session-cookie-secure
+    name: "Session Cookie Missing Secure Flag"
+    check_type: "cookie_flags"
+    protocol: "https"
+    cookie_name: ["session", "PHPSESSID", "JSESSIONID"]
+    flag_missing: "Secure"
+    severity: medium
+    confidence: high
+    description: "Session cookie over HTTPS missing Secure flag"
+
+  - id: session-cookie-samesite
+    name: "Session Cookie Missing SameSite"
+    check_type: "cookie_flags"
+    cookie_name: ["session", "PHPSESSID", "JSESSIONID"]
+    flag_missing: "SameSite"
+    severity: low
+    confidence: high
+    description: "Session cookie missing SameSite attribute"
+
+  # CORS Misconfigurations
+  - id: cors-wildcard
+    name: "CORS Wildcard Origin"
+    check_type: "cors"
+    request_header: "Origin: https://evil.com"
+    response_contains: "Access-Control-Allow-Origin: *"
+    severity: medium
+    confidence: high
+    description: "CORS allows any origin"
+
+  - id: cors-null-origin
+    name: "CORS Null Origin Allowed"
+    check_type: "cors"
+    request_header: "Origin: null"
+    response_contains: "Access-Control-Allow-Origin: null"
+    severity: high
+    confidence: high
+    description: "CORS allows null origin - potential bypass"
+
+  - id: cors-credentials-wildcard
+    name: "CORS Credentials with Wildcard"
+    check_type: "cors"
+    response_contains:
+      - "Access-Control-Allow-Origin: *"
+      - "Access-Control-Allow-Credentials: true"
+    severity: high
+    confidence: high
+    description: "Dangerous CORS config with credentials"
+
+  # OAuth/OIDC Issues
+  - id: oauth-open-redirect
+    name: "OAuth Open Redirect"
+    check_type: "oauth"
+    parameter: "redirect_uri"
+    test_values:
+      - "https://evil.com/callback"
+      - "https://evil.com%2f%2f@legitimate.com"
+      - "//evil.com"
+    severity: high
+    confidence: medium
+    description: "OAuth redirect_uri validation bypass"
+
+  - id: oidc-config-exposed
+    name: "OpenID Configuration Exposed"
+    path: "/.well-known/openid-configuration"
+    method: GET
+    status_codes: [200]
+    content_contains:
+      - "authorization_endpoint"
+      - "token_endpoint"
+    severity: low
+    confidence: high
+    description: "OpenID configuration exposed (informational)"
+
+  # Password Reset Flaws
+  - id: password-reset-host-header
+    name: "Password Reset Host Header Injection"
+    check_type: "host_header"
+    endpoint: "/password-reset"
+    inject_header: "Host: evil.com"
+    severity: high
+    confidence: medium
+    description: "Password reset may be vulnerable to host header injection"
+
+  # Missing Security Headers
+  - id: missing-csp
+    name: "Missing Content-Security-Policy"
+    check_type: "header_missing"
+    header: "Content-Security-Policy"
+    severity: low
+    confidence: high
+    description: "CSP header not set"
+
+  - id: missing-xframe
+    name: "Missing X-Frame-Options"
+    check_type: "header_missing"
+    header: "X-Frame-Options"
+    severity: medium
+    confidence: high
+    description: "X-Frame-Options not set - clickjacking possible"
+
+  - id: missing-xcontent-type
+    name: "Missing X-Content-Type-Options"
+    check_type: "header_missing"
+    header: "X-Content-Type-Options"
+    severity: low
+    confidence: high
+    description: "X-Content-Type-Options not set"
+
+  - id: missing-hsts
+    name: "Missing HSTS Header"
+    check_type: "header_missing"
+    protocol: "https"
+    header: "Strict-Transport-Security"
+    severity: medium
+    confidence: high
+    description: "HSTS not configured on HTTPS site"
+
+  # Rate Limiting
+  - id: no-rate-limit-login
+    name: "No Rate Limit on Login"
+    path: "/login"
+    method: POST
+    check_type: "rate_limit"
+    requests: 100
+    time_window: 60
+    severity: medium
+    confidence: medium
+    description: "Login endpoint lacks rate limiting - brute force possible"
+
+  - id: no-rate-limit-password-reset
+    name: "No Rate Limit on Password Reset"
+    path: "/password-reset"
+    method: POST
+    check_type: "rate_limit"
+    severity: medium
+    confidence: medium
+    description: "Password reset lacks rate limiting"
+
+  # 2FA Bypass
+  - id: 2fa-bypass-response-manipulation
+    name: "2FA Bypass via Response Manipulation"
+    check_type: "2fa_bypass"
+    test: "modify_response"
+    severity: critical
+    confidence: low
+    description: "2FA may be bypassable by response manipulation"
+
+  # Information Disclosure
+  - id: user-enumeration
+    name: "User Enumeration via Login"
+    path: "/login"
+    method: POST
+    check_type: "user_enum"
+    test_users: ["admin", "test", "randomuser123456"]
+    severity: low
+    confidence: medium
+    description: "Different error messages reveal valid usernames"
+
+  - id: user-enumeration-reset
+    name: "User Enumeration via Password Reset"
+    path: "/password-reset"
+    method: POST
+    check_type: "user_enum"
+    severity: low
+    confidence: medium
+    description: "Password reset reveals valid email addresses"

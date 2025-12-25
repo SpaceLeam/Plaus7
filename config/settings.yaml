@@ -1,0 +1,106 @@
+# Smart Recon Automation Suite 2025 - Configuration
+# ================================================
+
+general:
+  threads: 100
+  timeout: 30s
+  rate_limit: 500  # requests per second
+  output_format: json  # json, csv, txt
+  verbose: false
+  debug: false
+
+# Target configuration
+target:
+  scope_in: []  # domains to include
+  scope_out: [] # domains to exclude
+
+# Subdomain enumeration
+subdomain:
+  workers: 200
+  timeout: 10m
+  sources:
+    - crtsh
+    - hackertarget
+    - threatcrowd
+    - urlscan
+    - wayback
+  bruteforce: true
+  wordlist: "config/wordlists/subdomains.txt"
+  permutation: true
+
+# DNS resolution
+dns:
+  resolvers:
+    - 8.8.8.8
+    - 8.8.4.4
+    - 1.1.1.1
+    - 1.0.0.1
+  retries: 3
+  timeout: 5s
+
+# Port scanning
+portscan:
+  workers: 300
+  top_ports: 1000
+  full_scan: false
+  timeout: 3s
+  service_detect: true
+  custom_ports: []
+
+# HTTP probing
+http:
+  workers: 150
+  timeout: 10s
+  retries: 3
+  follow_redirects: true
+  max_redirects: 5
+  tls_verify: false
+  user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+  custom_headers: {}
+
+# Crawling
+crawler:
+  depth: 5
+  workers: 50
+  timeout: 2m
+  js_parse: true
+  max_urls: 10000
+
+# Pattern detection
+patterns:
+  enabled: true
+  directory: "config/patterns"
+  severity_threshold: low  # low, medium, high, critical
+  false_positive_filter: true
+
+# Nuclei integration
+nuclei:
+  enabled: true
+  templates_dir: ""  # use default
+  severity: "low,medium,high,critical"
+  rate_limit: 100
+  bulk_size: 25
+  concurrency: 25
+  tags: "exposure,misconfig,cve"
+
+# Output settings
+output:
+  directory: "output"
+  compress_old: true
+  retention_days: 7
+
+# Notifications
+notifications:
+  enabled: false
+  slack_webhook: ""
+  discord_webhook: ""
+  telegram_bot_token: ""
+  telegram_chat_id: ""
+
+# Stealth mode
+stealth:
+  enabled: false
+  delay_min: 100ms
+  delay_max: 500ms
+  rotate_user_agent: true
+  random_headers: true
